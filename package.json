@@ -1,0 +1,22 @@
+{
+  "name": "prisma-dbacl",
+  "version": "1.0.0",
+  "description": "dbacl wrapper for prisma",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dbacl/prisma-dbacl.git"
+  },
+  "author": "ishmeal",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dbacl/prisma-dbacl/issues"
+  },
+  "homepage": "https://github.com/dbacl/prisma-dbacl#readme",
+  "dependencies": {
+    "prisma-dbacl": "^1.0.0"
+  }
+}
