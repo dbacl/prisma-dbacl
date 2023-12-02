@@ -1,6 +1,6 @@
 {
   "name": "prisma-dbacl",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "dbacl wrapper for prisma",
   "main": "index.js",
   "scripts": {
@@ -15,8 +15,5 @@
   "bugs": {
     "url": "https://github.com/dbacl/prisma-dbacl/issues"
   },
-  "homepage": "https://github.com/dbacl/prisma-dbacl#readme",
-  "dependencies": {
-    "prisma-dbacl": "^1.0.0"
-  }
+  "homepage": "https://github.com/dbacl/prisma-dbacl#readme"
 }
