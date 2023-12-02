@@ -36,8 +36,10 @@ exports.findMany = async function(table, uid, where) {
 	return await table.findMany(where);
 }
 
+//unsure if this works correctly
 exports.create = async function(table, uid, where) {
-	
+	where = modifyWhere(uid, where['where']);
+	return await table.create(where);
 }
 
 exports.update = async function(table, uid, where) {
@@ -51,11 +53,14 @@ exports.delete = async function(table, uid, where) {
 }
 
 exports.deleteMany = async function(table, uid, where) {
-	
+	where = modifyWhere(uid, where['where']);
+	return await table.deleteMany(where);
 }
 
+//unsure if this works correctly
 exports.upsert = async function(table, uid, where) {
-	
+	where = modifyWhere(uid, where['where']);
+	return await table.upsert(where);
 }
 
 
