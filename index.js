@@ -10,6 +10,7 @@ modifyWhere = async function(uid, where) {
 	});
 	groups = groups.map(g => g.id);
 
+	//returns true if they have permissions to perform the action
 	return {where: {AND: [
 		where,
 		{OR: [
@@ -26,7 +27,8 @@ exports.findFirstOrThrow = async function(table, uid, where) {
 }
 
 exports.findUniqueOrThrow = async function(table, uid, where) {
-
+	where = modifyWhere(uid, where['where']);
+	return await table.findUniqueOrThrow(where);
 }
 
 exports.findMany = async function(table, uid, where) {
@@ -39,11 +41,13 @@ exports.create = async function(table, uid, where) {
 }
 
 exports.update = async function(table, uid, where) {
-	
+	where = modifyWhere(uid, where['where']);
+	return await table.update(where);
 }
 
 exports.delete = async function(table, uid, where) {
-
+	where = modifyWhere(uid, where['where']);
+	return await table.delete(where);
 }
 
 exports.deleteMany = async function(table, uid, where) {
