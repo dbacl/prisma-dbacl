@@ -1,6 +1,6 @@
 {
   "name": "prisma-dbacl",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "dbacl wrapper for prisma",
   "main": "index.js",
   "scripts": {
