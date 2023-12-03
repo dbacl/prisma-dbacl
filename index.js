@@ -1,6 +1,8 @@
+//import { PrismaClient } from '@prisma/client'; 
+
 modifyWhere = async function(uid, where) {
 	// get all groups of user
-	const groups = await prisma.group.findMany({ //where do we create the group table? 
+	const groups = await prisma.group.findMany({  
 		where: {
 			uid: uid
 		}
@@ -21,44 +23,43 @@ modifyWhere = async function(uid, where) {
 	]}};
 }
 
-exports.findFirstOrThrow = async function(table, uid, where) {
+export async function findFirstOrThrow(table, uid, where) {
 	where = modifyWhere(uid, where['where']);
 	return await table.findFirstOrThrow(where);
 }
 
-exports.findUniqueOrThrow = async function(table, uid, where) {
+export async function findUniqueOrThrow(table, uid, where) {
 	where = modifyWhere(uid, where['where']);
 	return await table.findUniqueOrThrow(where);
 }
 
-exports.findMany = async function(table, uid, where) {
+export async function findMany(table, uid, where) {
 	where = modifyWhere(uid, where['where']);
 	return await table.findMany(where);
 }
 
-//unsure if this works correctly
-exports.create = async function(table, uid, where) {
+export async function create(table, uid, where) {
 	where = modifyWhere(uid, where['where']);
 	return await table.create(where);
 }
 
-exports.update = async function(table, uid, where) {
+export async function update(table, uid, where) {
 	where = modifyWhere(uid, where['where']);
 	return await table.update(where);
 }
 
-exports.delete = async function(table, uid, where) {
+const _delete = async function (table, uid, where) {
 	where = modifyWhere(uid, where['where']);
 	return await table.delete(where);
-}
+};
+export { _delete as delete };
 
-exports.deleteMany = async function(table, uid, where) {
+export async function deleteMany(table, uid, where) {
 	where = modifyWhere(uid, where['where']);
 	return await table.deleteMany(where);
 }
 
-//unsure if this works correctly
-exports.upsert = async function(table, uid, where) {
+export async function upsert(table, uid, where) {
 	where = modifyWhere(uid, where['where']);
 	return await table.upsert(where);
 }
