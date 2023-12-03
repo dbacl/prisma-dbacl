@@ -1,76 +1,83 @@
 //import { PrismaClient } from '@prisma/client'; 
-dbacl = {};
 
-modifyWhere = async function(uid, options) {
+create = async function(table, options={}) {
+	return await table.create(options);
+}
+
+addUser = async function(userId) {
+	return await prisma.groups.create({
+		data: {
+			uid: userId,
+		},
+		select: {
+			gid: true,
+		}
+	}).gid;
+}
+
+modifyOptions = async function(uid, options) {
 	// get all groups of user
-	const groups = await prisma.user.findMany({  
+	let groups = await prisma.groups.findMany({  
 		where: {
 			uid: uid
 		},
-		select: {
-			groups: true
-		}
 	});
 	groups.push({
 		gid: 1 // public group
 	});
-	groups = groups.map(g => g.id);
+	groups = groups.map(g => g.gid);
 
-	//returns true if they have permissions to perform the action
-	options['where'] = {AND: [
-		options['where'],
-		{OR: [
-			{userR: true, uid: {in: groups}},
-			{groupR: true, gid: {in: groups}},
-			{otherR: true},
-		]}
-	]};
+	or = {OR: [
+		{userR: true, uid: {in: groups}},
+		{groupR: true, gid: {in: groups}},
+		{otherR: true},
+	]}
+
+	// returns true if they have permissions to perform the action
+	// if (options['where'] == undefined) {
+	// 	options['where'] = or;
+	// } else {
+		options['where'] = {AND: [options['where'], or]};
+	// }
 
 	return options;
 }
 
-dbacl.findFirstOrThrow = async function(table, uid, options) {
-	options = modifyWhere(uid, where);
+findFirstOrThrow = async function(table, uid, options={}) {
+	options = modifyOptions(uid, options);
 	return await table.findFirstOrThrow(options);
 }
 
-dbacl.findUniqueOrThrow = async function(table, uid, options) {
-	options = modifyWhere(uid, where);
+findUniqueOrThrow = async function(table, uid, options={}) {
+	options = modifyOptions(uid, options);
 	return await table.findUniqueOrThrow(options);
 }
 
-
-dbacl.update = async function(table, uid, options) {
-	options = modifyWhere(uid, where);
+update = async function(table, uid, options={}) {
+	options = modifyOptions(uid, options);
 	return await table.update(options);
 }
 
-dbacl._delete = async function (table, uid, options) {
-	options = modifyWhere(uid, where);
+_delete = async function (table, uid, options={}) {
+	options = modifyOptions(uid, options);
 	return await table.delete(options);
 };
 
-dbacl.deleteMany = async function(table, uid, options) {
-	options = modifyWhere(uid, where);
+deleteMany = async function(table, uid, options={}) {
+	options = modifyOptions(uid, options);
 	return await table.deleteMany(options);
 }
 
-dbacl.upsert = async function(table, uid, options) {
-	options = modifyWhere(uid, where);
+upsert = async function(table, uid, options={}) {
+	options = modifyOptions(uid, options);
 	return await table.upsert(options);
 }
 
-
-
-dbacl.findMany = async function(table, uid, options) {
-	options = modifyWhere(uid, options);
+findMany = async function(table, uid, options={}) {
+	options = modifyOptions(uid, options);
 	return await table.findMany(options);
 }
 
-dbacl.create = async function(table, uid, options) {
-	options = modifyWhere(uid, where);
-	return await table.create(options);
+module.exports = {
+	create, addUser, findFirstOrThrow, findUniqueOrThrow, update, _delete, deleteMany, upsert, findMany
 }
-
-
-export { dbacl }
