@@ -1,4 +1,3 @@
-//import { PrismaClient } from '@prisma/client'; 
 var assert = require('assert');
 
 gid = 2;
@@ -7,12 +6,8 @@ addGroup = function() {
 	return gid++;
 }
 
-create = async function(table, options={}) {
-	return await table.create(options);
-}
-
 addUser = async function(userId) {
-	return await prisma.groups.create({
+	await prisma.groups.create({
 		data: {
 			uid: userId,
 			gid: addGroup(),
@@ -25,47 +20,94 @@ addUser = async function(userId) {
 }
 
 addToGroup = async function(uid, gid) {
-	assert(gid != 0)
-	return await prisma.groups.create({
+	const result = await prisma.groups.create({
 		data: { uid: uid, gid: gid }
 	});
+	return result;
 }
 
-addAdmin = async function(uid) {
-	return await prisma.groups.create({
-		data: { uid: uid, gid: 0 }
+removeFromGroup = async function(uid, gid) {
+	return await prisma.groups.delete({
+		where: {
+			uid: uid,
+			gid: gid,
+		}
 	});
 }
 
-modifyOptions = async function(uid, options) {
-	if (uid === 1) {
-		return options;
+recurse = function(options, or) {
+	if (Object.hasOwn(options, 'where')) {
+		options['where'] = {AND: [options['where'], or]};
+	} else {
+		options['where'] = or;
 	}
+	if (Object.hasOwn(options, 'select')) {
+		for (var key of Object.keys(options['select'])) {
+			if (options['select'][key] === true) {
+				// do nothing
+				// assuming relations aren't selected with `true`
+			} else {
+				options['select'][key] = recurse(options['select'][key], or);
+			}
+		}
+	}
+	if (Object.hasOwn(options, 'include')) {
+		for (var key of Object.keys(options['include'])) {
+			if (options['include'][key] === true) {
+				options['include'][key] = {where: or};
+			} else {
+				options['include'][key] = recurse(options['include'][key], or);
+			}
+		}
+	}
+	return options;
+}
+
+modifyOptions = async function(uid, options, write=false) {
 	// get all groups of user
 	let groups = await prisma.groups.findMany({  
 		where: {
 			uid: uid
 		},
 	});
-	groups.push({
-		gid: 1 // public group
-	});
 	groups = groups.map(g => g.gid);
+	
+	// admin
+	if (groups.includes(0)) {
+		return options;
+	}
 
-	or = {OR: [
-		{userR: true, owner: {in: groups}},
-		{groupR: true, group: {in: groups}},
-		{otherR: true},
-	]}
+	let or;
+	if (write) {
+		or = {OR: [
+			{userW: true, owner: {in: groups}},
+			{groupW: true, group: {in: groups}},
+			{otherW: true},
+		]}
+	} else {
+		or = {OR: [
+			{userR: true, owner: {in: groups}},
+			{groupR: true, group: {in: groups}},
+			{otherR: true},
+		]}
+	}
 
-	// returns true if they have permissions to perform the action
-	// if (options['where'] == undefined) {
-	// 	options['where'] = or;
-	// } else {
-		options['where'] = {AND: [options['where'], or]};
-	// }
+	return recurse(options, or);
+}
 
-	return options;
+findUnique = async function(table, uid, options) {
+	options = await modifyOptions(uid, options);
+	return await table.findUnique(options);
+}
+
+findUniqueOrThrow = async function(table, uid, options) {
+	options = await modifyOptions(uid, options);
+	return await table.findUniqueOrThrow(options);
+}
+
+findFirst = async function(table, uid, options) {
+	options = await modifyOptions(uid, options);
+	return await table.findFirst(options);
 }
 
 findFirstOrThrow = async function(table, uid, options={}) {
@@ -73,36 +115,51 @@ findFirstOrThrow = async function(table, uid, options={}) {
 	return await table.findFirstOrThrow(options);
 }
 
-findUniqueOrThrow = async function(table, uid, options={}) {
-	options = await modifyOptions(uid, options);
-	return await table.findUniqueOrThrow(options);
-}
-
-update = async function(table, uid, options={}) {
-	options = await modifyOptions(uid, options);
-	return await table.update(options);
-}
-
-_delete = async function (table, uid, options={}) {
-	options = await modifyOptions(uid, options);
-	return await table.delete(options);
-};
-
-deleteMany = async function(table, uid, options={}) {
-	options = await modifyOptions(uid, options);
-	return await table.deleteMany(options);
-}
-
-upsert = async function(table, uid, options={}) {
-	options = await modifyOptions(uid, options);
-	return await table.upsert(options);
-}
-
 findMany = async function(table, uid, options={}) {
 	options = await modifyOptions(uid, options);
 	return await table.findMany(options);
 }
 
+// proper permissions need to be set by caller
+create = async function(table, options={}) {
+	return await table.create(options);
+}
+
+update = async function(table, uid, options={}) {
+	options = await modifyOptions(uid, options, true);
+	return await table.update(options);
+}
+
+upsert = async function(table, uid, options={}) {
+	options = await modifyOptions(uid, options, true);
+	return await table.upsert(options);
+}
+
+_delete = async function (table, uid, options={}) {
+	options = await modifyOptions(uid, options, true);
+	return await table.delete(options);
+};
+
+// proper permissions need to be set by caller
+createMany = async function(table, options={}) {
+	return await table.createMany(options);
+}
+
+updateMany = async function(table, options={}) {
+	return await table.updateMany(options, true);
+}
+
+deleteMany = async function(table, uid, options={}) {
+	options = await modifyOptions(uid, options, true);
+	return await table.deleteMany(options);
+}
+
 module.exports = {
-	create, addUser, findFirstOrThrow, findUniqueOrThrow, update, _delete, deleteMany, upsert, findMany, addGroup, addToGroup
+	create, addUser, 
+	addGroup, addToGroup,
+	findUnique, findUniqueOrThrow,
+	findFirst, findFirstOrThrow,
+	findMany,
+	create, update, upsert, _delete, 
+	createMany, updateMany, deleteMany, 
 }
